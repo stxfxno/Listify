@@ -7,9 +7,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
 
-from ..config import SPOTIFY_BLACK, SPOTIFY_GREEN, SPOTIFY_DARK_GRAY, SPOTIFY_LIGHT_GRAY
+from config import SPOTIFY_BLACK, SPOTIFY_GREEN, SPOTIFY_DARK_GRAY, SPOTIFY_LIGHT_GRAY
 from services.spotify_service import search_spotify, get_tracks_from_url
 from services.youtube_service import download_tracks
+from services.metadata_service import get_basic_metadata
 
 class MainScreen:
     """Clase para la pantalla principal de la aplicación"""
@@ -19,6 +20,10 @@ class MainScreen:
         
         # Variables compartidas
         self.shared_vars = shared_vars
+        
+        # Variables adicionales para metadatos
+        self.current_cover_url = None
+        self.current_album_name = None
         
         # Callbacks
         self.volver_callback = volver_callback
@@ -250,6 +255,20 @@ class MainScreen:
         )
         self.folder_label.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
         
+        # Opción para incluir metadatos
+        self.metadata_var = tk.BooleanVar(value=True)
+        self.metadata_check = tk.Checkbutton(
+            self.folder_frame,
+            text="Incluir metadatos",
+            variable=self.metadata_var,
+            fg="white",
+            bg=SPOTIFY_BLACK,
+            selectcolor=SPOTIFY_DARK_GRAY,
+            activebackground=SPOTIFY_BLACK,
+            activeforeground="white"
+        )
+        self.metadata_check.pack(side=tk.RIGHT, padx=10)
+        
         # Botones de descarga
         self.buttons_download_frame = tk.Frame(self.download_frame, bg=SPOTIFY_BLACK)
         self.buttons_download_frame.pack(fill=tk.X, pady=10)
@@ -356,12 +375,20 @@ class MainScreen:
         self.shared_vars['progress_var'].set(20)
         self.parent.update()
         
+        # Reiniciar información de metadatos
+        self.current_cover_url = None
+        self.current_album_name = None
+        
         # Ejecutar en un hilo separado para no congelar la UI
         threading.Thread(target=self._fetch_tracks_thread, args=(url,), daemon=True).start()
     
     def _fetch_tracks_thread(self, url):
         """Hilo para obtener pistas de Spotify"""
         tracks, cover_url, title = get_tracks_from_url(url)
+        
+        # Guardar información de metadatos
+        self.current_cover_url = cover_url
+        self.current_album_name = title
         
         # Actualizar la UI en el hilo principal
         self.parent.after(0, lambda: self._update_tracks_ui(tracks, cover_url, title))
@@ -412,6 +439,10 @@ class MainScreen:
         self.shared_vars['progress_var'].set(20)
         self.parent.update()
         
+        # Reiniciar información de metadatos
+        self.current_cover_url = None
+        self.current_album_name = None
+        
         # Ejecutar en un hilo separado para no congelar la UI
         threading.Thread(target=self._search_spotify_thread, 
                      args=(search_query, search_type), 
@@ -420,6 +451,10 @@ class MainScreen:
     def _search_spotify_thread(self, query, search_type):
         """Hilo para buscar en Spotify"""
         results, cover_url, title = search_spotify(query, search_type)
+        
+        # Guardar información de metadatos
+        self.current_cover_url = cover_url
+        self.current_album_name = title
         
         # Actualizar la UI en el hilo principal
         self.parent.after(0, lambda: self._update_search_ui(results, cover_url, title))
@@ -478,4 +513,12 @@ class MainScreen:
             self.parent.after(0, lambda: messagebox.showerror("Error", "Selecciona un destino primero."))
             return
         
-        download_tracks(tracks, destino, self.parent, self.shared_vars)
+        # Determinar si se deben incluir metadatos
+        use_metadata = self.metadata_var.get()
+        
+        # Usar los metadatos recopilados solo si están marcados para incluirse
+        cover_url = self.current_cover_url if use_metadata else None
+        album_name = self.current_album_name if use_metadata else None
+        
+        # Descargar las pistas
+        download_tracks(tracks, destino, self.parent, self.shared_vars, cover_url, album_name)

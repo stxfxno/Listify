@@ -8,6 +8,20 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from tkinter import messagebox
 from config import CLIENT_ID, CLIENT_SECRET
+import os
+
+env_path = os.path.join(os.getcwd(), '.env')
+
+
+from dotenv import load_dotenv
+
+load_dotenv(env_path)
+
+# Mostrar las variables de entorno (¡cuidado! no hagas esto en producción)
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+print(f"CLIENT_ID encontrado: {'Sí' if CLIENT_ID else 'No'}")
+print(f"CLIENT_SECRET encontrado: {'Sí' if CLIENT_SECRET else 'No'}")
 
 def get_spotify_client():
     """
