@@ -54,6 +54,29 @@ class ListifyApp:
             'status_text': tk.StringVar(value="Listo para descargar"),
             'is_fullscreen': tk.BooleanVar(value=True)  # Iniciar como True
         }
+        
+        # Crear frames principales
+        self.splash_screen = SplashScreen(self.root, self._abrir_inicio, self._abrir_redes)
+        self.main_screen = MainScreen(
+            self.root, 
+            self.shared_vars, 
+            self._volver_inicio, 
+            self._abrir_redes, 
+            self._seleccionar_destino,
+            self._abrir_acerca_de,
+            self._toggle_fullscreen
+        )
+        self.about_screen = AboutScreen(self.root, self._volver_main)
+        
+        # Configurar estilos
+        setup_styles(self.main_screen, self.splash_screen)
+        
+        # Configurar acceso rápido para pantalla completa
+        self.root.bind("<F11>", lambda event: self._toggle_fullscreen())
+        self.root.bind("<Escape>", lambda event: self._exit_fullscreen())
+        
+        # Iniciar con la pantalla de inicio
+        self.mostrar_splash()
 
     def _setup_icon(self):
         """Configura el icono de la aplicación"""

@@ -37,48 +37,51 @@ class MainScreen:
         self._create_widgets()
     
     def _create_widgets(self):
-        """Crear los widgets de la pantalla principal"""
-        # Contenedor principal con barras de desplazamiento
-        self.main_container = tk.Frame(self.frame, bg=SPOTIFY_BLACK)
-        self.main_container.pack(fill=tk.BOTH, expand=True)
+        """Crear los widgets de la pantalla principal sin scroll vertical"""
+        # Frame principal de contenido - cambiamos a un layout directo sin canvas
+        self.content_frame = tk.Frame(self.frame, bg=SPOTIFY_BLACK)
+        self.content_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Canvas para permitir desplazamiento
-        self.canvas = tk.Canvas(self.main_container, bg=SPOTIFY_BLACK, highlightthickness=0)
-        self.scrollbar = ttk.Scrollbar(self.main_container, orient="vertical", command=self.canvas.yview)
-        
-        # Frame que contiene todos los widgets
-        self.content_frame = tk.Frame(self.canvas, bg=SPOTIFY_BLACK)
-        self.content_frame.bind("<Configure>", 
-                               lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        
-        # Configurar canvas
-        self.canvas_frame = self.canvas.create_window((0, 0), window=self.content_frame, anchor="nw")
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        
-        # Ajustar el ancho del canvas al cambiar el tamaño de la ventana
-        self.canvas.bind("<Configure>", self._on_canvas_configure)
-        
-        # Configurar scroll con rueda del ratón
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        
-        # Empaquetar canvas y scrollbar
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
-        
-        # Header con logo y navegación
+        # Header con logo y navegación (reducimos el padding)
         self._create_header()
         
-        # Sección de URL de Spotify
-        self._create_url_section()
+        # Contenedor central para elementos principales
+        self.center_container = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
+        self.center_container.pack(fill=tk.BOTH, expand=True, padx=40, pady=(0, 5))
         
-        # Sección de búsqueda
+        # Dividimos la interfaz en dos secciones horizontales para mejor organización
+        self.top_section = tk.Frame(self.center_container, bg=SPOTIFY_BLACK)
+        self.top_section.pack(fill=tk.X, pady=(0, 5))
+        
+        # Sección de URL y búsqueda (lado a lado)
+        self.search_controls = tk.Frame(self.top_section, bg=SPOTIFY_BLACK)
+        self.search_controls.pack(fill=tk.X, pady=(0, 5))
+        
+        # URL y búsqueda en la misma fila
+        self._create_url_section()
         self._create_search_section()
         
-        # Sección de info y portada
+        # Sección principal con info y lista
+        self.main_section = tk.Frame(self.center_container, bg=SPOTIFY_BLACK)
+        self.main_section.pack(fill=tk.BOTH, expand=True)
+        
+        # Colocamos info y lista de canciones lado a lado
+        self.left_panel = tk.Frame(self.main_section, bg=SPOTIFY_BLACK, width=600)
+        self.left_panel.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 10))
+        self.left_panel.pack_propagate(False)  # Mantener el ancho fijo
+        
+        self.right_panel = tk.Frame(self.main_section, bg=SPOTIFY_BLACK)
+        self.right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Sección de info y portada en panel izquierdo
         self._create_info_section()
         
-        # Lista de canciones con scrollbar
+        # Lista de canciones en panel derecho
         self._create_tracklist_section()
+        
+        # Sección inferior para descarga y progreso
+        self.bottom_section = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
+        self.bottom_section.pack(fill=tk.X, padx=40, pady=(0, 10))
         
         # Sección de descarga
         self._create_download_section()
@@ -88,19 +91,11 @@ class MainScreen:
         
         # Footer
         self._create_footer()
-    
-    def _on_canvas_configure(self, event):
-        """Ajusta el ancho del contenido al cambiar el tamaño del canvas"""
-        self.canvas.itemconfig(self.canvas_frame, width=event.width)
-    
-    def _on_mousewheel(self, event):
-        """Maneja el desplazamiento con la rueda del ratón"""
-        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    
+
     def _create_header(self):
-        """Crear el encabezado con logo y navegación"""
+        """Crear el encabezado con logo y navegación (reducido)"""
         self.header_frame = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
-        self.header_frame.pack(fill=tk.X, padx=20, pady=10)
+        self.header_frame.pack(fill=tk.X, padx=20, pady=5)  # Reducimos el padding vertical
         
         self.small_logo = tk.Label(
             self.header_frame, 
@@ -123,7 +118,7 @@ class MainScreen:
             bg=SPOTIFY_DARK_GRAY, 
             fg="white", 
             padx=10, 
-            pady=5,
+            pady=4,  # Reducimos el padding vertical
             borderwidth=0,
             command=self.fullscreen_callback
         )
@@ -137,7 +132,7 @@ class MainScreen:
             bg=SPOTIFY_DARK_GRAY, 
             fg="white", 
             padx=10, 
-            pady=5,
+            pady=4,  # Reducimos el padding vertical
             borderwidth=0,
             command=self.acerca_callback
         )
@@ -151,16 +146,16 @@ class MainScreen:
             bg=SPOTIFY_DARK_GRAY, 
             fg="white", 
             padx=10, 
-            pady=5,
+            pady=4,  # Reducimos el padding vertical
             borderwidth=0,
             command=self.volver_callback
         )
         self.nav_btn.pack(side=tk.RIGHT, padx=5)
-    
+
     def _create_url_section(self):
         """Crear la sección de entrada de URL"""
-        self.url_frame = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
-        self.url_frame.pack(fill=tk.X, padx=40, pady=10)
+        self.url_frame = tk.Frame(self.search_controls, bg=SPOTIFY_BLACK)
+        self.url_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=5)
         
         self.url_label = tk.Label(
             self.url_frame, 
@@ -173,7 +168,7 @@ class MainScreen:
         
         self.url_entry = tk.Entry(
             self.url_frame, 
-            width=50, 
+            width=40, 
             font=("Helvetica", 12),
             bg=SPOTIFY_DARK_GRAY,
             fg="white",
@@ -193,11 +188,11 @@ class MainScreen:
             command=self.fetch_tracks
         )
         self.fetch_btn.pack(side=tk.LEFT, padx=5)
-    
+
     def _create_search_section(self):
         """Crear la sección de búsqueda"""
-        self.search_frame = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
-        self.search_frame.pack(fill=tk.X, padx=40, pady=10)
+        self.search_frame = tk.Frame(self.search_controls, bg=SPOTIFY_BLACK, width=700)
+        self.search_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=5)
 
         self.search_label = tk.Label(
             self.search_frame, 
@@ -210,7 +205,7 @@ class MainScreen:
 
         self.search_entry = tk.Entry(
             self.search_frame, 
-            width=40, 
+            width=30, 
             font=("Helvetica", 12),
             bg=SPOTIFY_DARK_GRAY,
             fg="white",
@@ -239,11 +234,11 @@ class MainScreen:
             command=self.search_spotify
         )
         self.search_btn.pack(side=tk.LEFT, padx=5)
-    
+
     def _create_info_section(self):
         """Crear la sección de información y portada mejorada con mejor distribución"""
-        self.info_frame = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
-        self.info_frame.pack(fill=tk.X, padx=40, pady=10)
+        self.info_frame = tk.Frame(self.left_panel, bg=SPOTIFY_BLACK)
+        self.info_frame.pack(fill=tk.X, pady=5)
         
         # Frame para la portada
         self.cover_frame = tk.Frame(self.info_frame, bg=SPOTIFY_BLACK, width=150, height=150)
@@ -255,7 +250,7 @@ class MainScreen:
         
         # Frame para la información del título y metadatos
         self.info_content_frame = tk.Frame(self.info_frame, bg=SPOTIFY_BLACK)
-        self.info_content_frame.pack(side=tk.LEFT, padx=20, fill=tk.X, expand=True, anchor='nw')
+        self.info_content_frame.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True, anchor='nw')
         
         # Título de la búsqueda
         self.title_label = tk.Label(
@@ -264,15 +259,15 @@ class MainScreen:
             fg="white",
             bg=SPOTIFY_BLACK,
             font=("Helvetica", 16, "bold"),
-            wraplength=600,
+            wraplength=400,
             justify=tk.LEFT,
             anchor='w'
         )
-        self.title_label.pack(fill=tk.X, pady=(0, 10), anchor='w')
+        self.title_label.pack(fill=tk.X, pady=(0, 5), anchor='w')
         
         # Detalles de la canción seleccionada
         self.song_details_frame = tk.Frame(self.info_content_frame, bg=SPOTIFY_BLACK)
-        self.song_details_frame.pack(fill=tk.X, pady=5, anchor='w')
+        self.song_details_frame.pack(fill=tk.X, pady=2, anchor='w')
         
         # Título de la canción
         self.song_title_label = tk.Label(
@@ -294,19 +289,19 @@ class MainScreen:
             font=("Helvetica", 12),
             anchor='w'
         )
-        self.artist_label.pack(fill=tk.X, anchor='w', pady=(2, 10))
+        self.artist_label.pack(fill=tk.X, anchor='w', pady=(2, 5))
         
         # Frame para detalles en dos filas con dos columnas cada una
         self.details_grid = tk.Frame(self.song_details_frame, bg=SPOTIFY_BLACK)
-        self.details_grid.pack(fill=tk.X, pady=(0, 5), anchor='w')
+        self.details_grid.pack(fill=tk.X, pady=(0, 2), anchor='w')
         
         # Primera fila
         self.details_row1 = tk.Frame(self.details_grid, bg=SPOTIFY_BLACK)
-        self.details_row1.pack(fill=tk.X, pady=(0, 5))
+        self.details_row1.pack(fill=tk.X, pady=(0, 2))
         
         # Álbum (columna 1)
-        self.album_frame = tk.Frame(self.details_row1, bg=SPOTIFY_BLACK, width=300)
-        self.album_frame.pack(side=tk.LEFT, padx=(0, 20))
+        self.album_frame = tk.Frame(self.details_row1, bg=SPOTIFY_BLACK, width=200)
+        self.album_frame.pack(side=tk.LEFT, padx=(0, 10))
         
         self.album_label_title = tk.Label(
             self.album_frame,
@@ -329,7 +324,7 @@ class MainScreen:
         self.album_label.pack(side=tk.LEFT)
         
         # Duración (columna 2)
-        self.duration_frame = tk.Frame(self.details_row1, bg=SPOTIFY_BLACK, width=200)
+        self.duration_frame = tk.Frame(self.details_row1, bg=SPOTIFY_BLACK, width=150)
         self.duration_frame.pack(side=tk.LEFT)
         
         self.duration_label_title = tk.Label(
@@ -357,8 +352,8 @@ class MainScreen:
         self.details_row2.pack(fill=tk.X)
         
         # Lanzamiento (columna 1)
-        self.release_frame = tk.Frame(self.details_row2, bg=SPOTIFY_BLACK, width=300)
-        self.release_frame.pack(side=tk.LEFT, padx=(0, 20))
+        self.release_frame = tk.Frame(self.details_row2, bg=SPOTIFY_BLACK, width=200)
+        self.release_frame.pack(side=tk.LEFT, padx=(0, 10))
         
         self.release_label_title = tk.Label(
             self.release_frame,
@@ -381,7 +376,7 @@ class MainScreen:
         self.release_label.pack(side=tk.LEFT)
         
         # Popularidad (columna 2)
-        self.popularity_frame = tk.Frame(self.details_row2, bg=SPOTIFY_BLACK, width=200)
+        self.popularity_frame = tk.Frame(self.details_row2, bg=SPOTIFY_BLACK, width=150)
         self.popularity_frame.pack(side=tk.LEFT)
         
         self.popularity_label_title = tk.Label(
@@ -407,11 +402,10 @@ class MainScreen:
         # Ocultar detalles al principio
         self.song_details_frame.pack_forget()
         
-    
     def _create_tracklist_section(self):
-        """Crear la sección de lista de canciones con altura optimizada"""
-        self.list_frame = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
-        self.list_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=10)
+        """Crear la sección de lista de canciones optimizada"""
+        self.list_frame = tk.Frame(self.right_panel, bg=SPOTIFY_BLACK)
+        self.list_frame.pack(fill=tk.BOTH, expand=True)
         
         self.list_label = tk.Label(
             self.list_frame, 
@@ -420,7 +414,7 @@ class MainScreen:
             bg=SPOTIFY_BLACK, 
             font=("Helvetica", 12)
         )
-        self.list_label.pack(anchor='w', padx=5, pady=5)
+        self.list_label.pack(anchor='w', padx=5, pady=2)
         
         self.list_container = tk.Frame(self.list_frame, bg=SPOTIFY_BLACK)
         self.list_container.pack(fill=tk.BOTH, expand=True)
@@ -428,33 +422,33 @@ class MainScreen:
         self.scrollbar = tk.Scrollbar(self.list_container)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # El valor height es clave para controlar el tamaño vertical
-        # Al usar un valor fijo pero no muy grande (10-12), nos aseguramos
-        # que toda la interfaz se vea sin necesidad de scroll
+        # Usamos fill=BOTH y expand=True para que el listbox se ajuste
         self.track_list = tk.Listbox(
             self.list_container, 
-            width=60, 
-            height=10,  # Altura reducida para evitar scroll en la ventana principal
             font=("Helvetica", 10),
             bg=SPOTIFY_DARK_GRAY,
             fg="white",
             selectbackground=SPOTIFY_GREEN,
             activestyle='none',
-            yscrollcommand=self.scrollbar.set
+            yscrollcommand=self.scrollbar.set,
+            borderwidth=0,
+            highlightthickness=1,
+            highlightbackground=SPOTIFY_DARK_GRAY
         )
         self.track_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar.config(command=self.track_list.yview)
         
         # Añadir evento de selección
         self.track_list.bind('<<ListboxSelect>>', self._on_track_select)
-    
+
     def _create_download_section(self):
-        """Crear la sección de descarga"""
-        self.download_frame = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
-        self.download_frame.pack(fill=tk.X, padx=40, pady=10)
+        """Crear la sección de descarga compacta"""
+        self.download_frame = tk.Frame(self.bottom_section, bg=SPOTIFY_BLACK)
+        self.download_frame.pack(fill=tk.X, pady=2)
         
+        # Primera fila: carpeta y metadatos
         self.folder_frame = tk.Frame(self.download_frame, bg=SPOTIFY_BLACK)
-        self.folder_frame.pack(fill=tk.X, pady=5)
+        self.folder_frame.pack(fill=tk.X)
         
         self.folder_btn = tk.Button(
             self.folder_frame, 
@@ -463,7 +457,7 @@ class MainScreen:
             bg=SPOTIFY_DARK_GRAY, 
             fg="white", 
             padx=10, 
-            pady=5,
+            pady=4,  # Reducimos padding
             borderwidth=0,
             command=self.destino_callback
         )
@@ -493,9 +487,9 @@ class MainScreen:
         )
         self.metadata_check.pack(side=tk.RIGHT, padx=10)
         
-        # Botones de descarga
+        # Segunda fila: botones de descarga
         self.buttons_download_frame = tk.Frame(self.download_frame, bg=SPOTIFY_BLACK)
-        self.buttons_download_frame.pack(fill=tk.X, pady=10)
+        self.buttons_download_frame.pack(fill=tk.X, pady=5)
         
         self.download_song_btn = tk.Button(
             self.buttons_download_frame, 
@@ -504,7 +498,7 @@ class MainScreen:
             bg=SPOTIFY_GREEN, 
             fg="white", 
             padx=15, 
-            pady=8,
+            pady=6,  # Reducimos padding
             borderwidth=0,
             command=self.descargar_cancion
         )
@@ -517,16 +511,16 @@ class MainScreen:
             bg=SPOTIFY_GREEN, 
             fg="white", 
             padx=15, 
-            pady=8,
+            pady=6,  # Reducimos padding
             borderwidth=0,
             command=self.descargar_playlist
         )
         self.download_playlist_btn.pack(side=tk.LEFT, padx=5)
-    
+
     def _create_progress_section(self):
-        """Crear la sección de progreso"""
-        self.progress_frame = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
-        self.progress_frame.pack(fill=tk.X, padx=40, pady=5)
+        """Crear la sección de progreso compacta"""
+        self.progress_frame = tk.Frame(self.bottom_section, bg=SPOTIFY_BLACK)
+        self.progress_frame.pack(fill=tk.X, pady=2)
         
         self.current_task_label = tk.Label(
             self.progress_frame,
@@ -536,7 +530,7 @@ class MainScreen:
             font=("Helvetica", 10),
             anchor='w'
         )
-        self.current_task_label.pack(fill=tk.X, padx=5, pady=2)
+        self.current_task_label.pack(fill=tk.X, padx=2, pady=1)  # Reducimos padding
         
         self.progress_bar = ttk.Progressbar(
             self.progress_frame,
@@ -544,7 +538,7 @@ class MainScreen:
             mode="determinate",
             variable=self.shared_vars['progress_var']
         )
-        self.progress_bar.pack(fill=tk.X, padx=5, pady=2)
+        self.progress_bar.pack(fill=tk.X, padx=2, pady=1)  # Reducimos padding
         
         self.status_label = tk.Label(
             self.progress_frame,
@@ -554,28 +548,23 @@ class MainScreen:
             font=("Helvetica", 10),
             anchor='w'
         )
-        self.status_label.pack(fill=tk.X, padx=5, pady=2)
-    
+        self.status_label.pack(fill=tk.X, padx=2, pady=1)  # Reducimos padding
+
     def _create_footer(self):
-        """Crear el pie de página mejorado y compacto"""
-        self.footer = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK, pady=5)
-        self.footer.pack(fill=tk.X, padx=40, pady=5)
+        """Crear el pie de página ultra compacto"""
+        self.footer = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK, pady=2)
+        self.footer.pack(fill=tk.X, padx=40, pady=2)
         
-        # Crear una única fila con toda la información
-        # Columna izquierda: Copyright
-        self.footer_left = tk.Frame(self.footer, bg=SPOTIFY_BLACK)
-        self.footer_left.pack(side=tk.LEFT, anchor='w')
-        
-        self.footer_text = tk.Label(
-            self.footer_left,
+        # Tres columnas: Copyright, Desarrollador, Redes
+        self.footer_left = tk.Label(
+            self.footer,
             text="© 2025 Listify - V1.2.0",
             fg=SPOTIFY_LIGHT_GRAY,
             bg=SPOTIFY_BLACK,
             font=("Helvetica", 9)
         )
-        self.footer_text.pack(side=tk.LEFT)
+        self.footer_left.pack(side=tk.LEFT)
         
-        # Separador (texto de desarrollador)
         self.dev_text = tk.Label(
             self.footer,
             text="Desarrollado por Stef.dev",
@@ -585,7 +574,7 @@ class MainScreen:
         )
         self.dev_text.pack(side=tk.LEFT, padx=20)
         
-        # Columna derecha: Redes sociales en una sola línea
+        # Redes sociales con menos padding
         self.footer_right = tk.Frame(self.footer, bg=SPOTIFY_BLACK)
         self.footer_right.pack(side=tk.RIGHT, anchor='e')
         
@@ -596,9 +585,9 @@ class MainScreen:
             bg=SPOTIFY_BLACK,
             font=("Helvetica", 9)
         )
-        self.social_label.pack(side=tk.LEFT, padx=(0, 5))
+        self.social_label.pack(side=tk.LEFT, padx=(0, 2))
         
-        # Función para crear botones sociales
+        # Función para crear botones sociales más compactos
         def create_social_button(text, network):
             btn = tk.Button(
                 self.footer_right,
@@ -607,11 +596,11 @@ class MainScreen:
                 bg=SPOTIFY_BLACK,
                 fg=SPOTIFY_LIGHT_GRAY,
                 borderwidth=0,
-                padx=3,
+                padx=2,  # Reducimos padding
                 pady=0,
                 command=lambda: self.redes_callback(network)
             )
-            btn.pack(side=tk.LEFT, padx=2)
+            btn.pack(side=tk.LEFT, padx=1)  # Reducimos padding
             return btn
         
         # Crear botones para diferentes redes
