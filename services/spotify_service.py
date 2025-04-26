@@ -143,3 +143,70 @@ def get_tracks_from_url(url):
     except Exception as e:
         messagebox.showerror("Error", f"Error al obtener datos de Spotify: {e}")
         return [], None, None
+    
+def get_track_details(track_name):
+    """
+    Obtiene detalles completos de una canción desde Spotify
+    
+    Args:
+        track_name (str): Nombre de la canción en formato "titulo - artista"
+    
+    Returns:
+        dict: Diccionario con los detalles de la canción o None si no se encuentra
+    """
+    if not track_name:
+        return None
+    
+    sp = get_spotify_client()
+    
+    try:
+        # Separar título y artista
+        parts = track_name.split(" - ", 1)
+        title = parts[0].strip()
+        artist = parts[1].strip() if len(parts) > 1 else ""
+        
+        # Construir la consulta
+        query = f"track:{title}"
+        if artist:
+            query += f" artist:{artist}"
+        
+        # Buscar la canción
+        results = sp.search(q=query, type="track", limit=1)
+        
+        if not results['tracks']['items']:
+            # Intentar una búsqueda más general si no hay resultados
+            results = sp.search(q=track_name, type="track", limit=1)
+            
+            if not results['tracks']['items']:
+                return None
+        
+        # Obtener el primer resultado
+        track = results['tracks']['items'][0]
+        
+        # Formatear duración a minutos:segundos
+        duration_ms = track['duration_ms']
+        minutes = duration_ms // 60000
+        seconds = (duration_ms % 60000) // 1000
+        duration_str = f"{minutes}:{seconds:02d}"
+        
+        # Construir diccionario de detalles
+        details = {
+            'id': track['id'],
+            'name': track['name'],
+            'artists': [artist['name'] for artist in track['artists']],
+            'album': {
+                'name': track['album']['name'],
+                'release_date': track['album']['release_date'],
+                'images': [img['url'] for img in track['album']['images']] if track['album']['images'] else []
+            },
+            'duration': duration_str,
+            'duration_ms': duration_ms,
+            'popularity': track['popularity'],
+            'url': track['external_urls']['spotify'] if 'external_urls' in track else None
+        }
+        
+        return details
+    
+    except Exception as e:
+        print(f"Error al obtener detalles de la canción: {e}")
+        return None

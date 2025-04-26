@@ -20,29 +20,33 @@ class SplashScreen:
     
     def _create_widgets(self):
         """Crear los widgets de la pantalla de inicio"""
+        # Contenedor principal
+        self.main_container = tk.Frame(self.frame, bg=SPOTIFY_BLACK)
+        self.main_container.place(relx=0.5, rely=0.5, anchor="center")
+        
         # Logo grande
         self.logo_label = tk.Label(
-            self.frame, 
+            self.main_container, 
             text="🎵 Listify", 
             fg=SPOTIFY_GREEN, 
             bg=SPOTIFY_BLACK, 
             font=("Helvetica", 48, "bold")
         )
-        self.logo_label.pack(pady=100)
+        self.logo_label.pack(pady=(0, 20))
         
         # Eslogan
         self.slogan_label = tk.Label(
-            self.frame, 
+            self.main_container, 
             text="Tu música favorita, donde quieras", 
             fg=SPOTIFY_LIGHT_GRAY, 
             bg=SPOTIFY_BLACK, 
             font=("Helvetica", 16)
         )
-        self.slogan_label.pack(pady=20)
+        self.slogan_label.pack(pady=(0, 40))
         
         # Botones estilizados
-        self.buttons_frame = tk.Frame(self.frame, bg=SPOTIFY_BLACK)
-        self.buttons_frame.pack(pady=50)
+        self.buttons_frame = tk.Frame(self.main_container, bg=SPOTIFY_BLACK)
+        self.buttons_frame.pack(pady=(0, 50))
         
         self.inicio_btn = tk.Button(
             self.buttons_frame, 

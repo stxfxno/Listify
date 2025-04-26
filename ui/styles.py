@@ -5,56 +5,59 @@ Listify - Estilos y temas
 """
 import tkinter as tk
 from tkinter import ttk
-from config import SPOTIFY_GREEN, SPOTIFY_DARK_GRAY
+from config import SPOTIFY_GREEN, SPOTIFY_BLACK, SPOTIFY_DARK_GRAY, SPOTIFY_LIGHT_GRAY
+
+# Colores adicionales para una interfaz más rica
+SPOTIFY_HOVER_GREEN = "#1ED760"
+SPOTIFY_HOVER_GRAY = "#444444"
 
 def setup_styles(main_screen, splash_screen):
-    """Configurar estilos para todos los widgets"""
+    """Configurar estilos para todos los widgets con una apariencia más moderna"""
     # Configurar estilos para ttk widgets
     style = ttk.Style()
     style.theme_use('default')
-    style.configure("TProgressbar", 
-                thickness=10, 
-                troughcolor=SPOTIFY_DARK_GRAY,
-                background=SPOTIFY_GREEN)
     
-    # Configurar estilo para el combobox
+    # Barra de progreso mejorada
+    style.configure("TProgressbar", 
+                thickness=8, 
+                troughcolor=SPOTIFY_BLACK,
+                background=SPOTIFY_GREEN,
+                borderwidth=0,
+                relief="flat")
+    
+    # Combobox mejorado
     style.configure("TCombobox", 
                 fieldbackground=SPOTIFY_DARK_GRAY,
                 background=SPOTIFY_DARK_GRAY,
                 foreground="white",
-                selectbackground=SPOTIFY_GREEN)
+                selectbackground=SPOTIFY_GREEN,
+                arrowcolor="white")
     
-    # Configurar hover para botones de la pantalla principal
+    style.map("TCombobox",
+            fieldbackground=[('readonly', SPOTIFY_DARK_GRAY)],
+            selectbackground=[('readonly', SPOTIFY_GREEN)],
+            selectforeground=[('readonly', 'white')])
+    
+    # Configurar scrollbar personalizada
+    style.configure("Vertical.TScrollbar", 
+                background=SPOTIFY_DARK_GRAY, 
+                troughcolor=SPOTIFY_BLACK,
+                arrowcolor=SPOTIFY_LIGHT_GRAY)
+    
+    # Configurar hover para botones
     _configure_hover_buttons(main_screen)
-    
-    # Configurar hover para botones de la pantalla de inicio
     _configure_hover_buttons(splash_screen)
 
 def _configure_hover_buttons(screen):
     """Configura efectos hover para los botones"""
     buttons = []
     
-    # Identificar los botones en la pantalla principal
-    if hasattr(screen, 'nav_btn'):
-        buttons.append(screen.nav_btn)
-    if hasattr(screen, 'fetch_btn'):
-        buttons.append(screen.fetch_btn)
-    if hasattr(screen, 'search_btn'):
-        buttons.append(screen.search_btn)
-    if hasattr(screen, 'folder_btn'):
-        buttons.append(screen.folder_btn)
-    if hasattr(screen, 'download_song_btn'):
-        buttons.append(screen.download_song_btn)
-    if hasattr(screen, 'download_playlist_btn'):
-        buttons.append(screen.download_playlist_btn)
-    if hasattr(screen, 'social_btn'):
-        buttons.append(screen.social_btn)
-    
-    # Identificar los botones en la pantalla de inicio
-    if hasattr(screen, 'inicio_btn'):
-        buttons.append(screen.inicio_btn)
-    if hasattr(screen, 'redes_btn'):
-        buttons.append(screen.redes_btn)
+    # Identificar todos los botones en el objeto
+    for attr_name in dir(screen):
+        if attr_name.endswith('_btn') and hasattr(screen, attr_name):
+            btn = getattr(screen, attr_name)
+            if isinstance(btn, tk.Button):
+                buttons.append(btn)
     
     # Aplicar efectos hover a los botones encontrados
     for btn in buttons:
@@ -64,13 +67,13 @@ def _configure_hover_buttons(screen):
 def _on_enter(e):
     """Efecto al pasar el mouse sobre un botón"""
     if e.widget['bg'] == SPOTIFY_GREEN:
-        e.widget['bg'] = "#1ED760"  # Verde más claro
+        e.widget.config(bg=SPOTIFY_HOVER_GREEN, cursor="hand2")
     else:
-        e.widget['bg'] = "#444444"  # Gris más claro
+        e.widget.config(bg=SPOTIFY_HOVER_GRAY, cursor="hand2")
 
 def _on_leave(e):
     """Efecto al quitar el mouse de un botón"""
-    if "#1ED760" in e.widget['bg']:
-        e.widget['bg'] = SPOTIFY_GREEN
+    if SPOTIFY_HOVER_GREEN in e.widget['bg']:
+        e.widget.config(bg=SPOTIFY_GREEN)
     else:
-        e.widget['bg'] = SPOTIFY_DARK_GRAY
+        e.widget.config(bg=SPOTIFY_DARK_GRAY)
