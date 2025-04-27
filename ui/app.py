@@ -16,6 +16,7 @@ from ui.main_screen import MainScreen
 from ui.about_screen import AboutScreen  # Nueva pantalla para Acerca de
 from ui.player_screen import PlayerScreen  # Nueva pantalla para el reproductor
 from ui.styles import setup_styles
+from services.music_player_service import MusicPlayerService
 
 class ListifyApp:
     """Clase principal de la aplicación con soporte para pantalla completa"""
@@ -56,6 +57,9 @@ class ListifyApp:
             'is_fullscreen': tk.BooleanVar(value=True)  # Iniciar como True
         }
         
+        # Inicializar el servicio de reproductor compartido
+        self.music_player = MusicPlayerService()
+        
         # Crear frames principales
         self.splash_screen = SplashScreen(self.root, self._abrir_inicio, self._abrir_redes)
         self.main_screen = MainScreen(
@@ -69,7 +73,8 @@ class ListifyApp:
             self._abrir_reproductor  # Añadir callback del reproductor
         )
         self.about_screen = AboutScreen(self.root, self._volver_main)
-        self.player_screen = PlayerScreen(self.root, self.shared_vars, self._volver_main)
+        # Modificar la línea donde se crea PlayerScreen
+        self.player_screen = PlayerScreen(self.root, self.shared_vars, self._volver_main, self.music_player)
         
         # Configurar estilos
         setup_styles(self.main_screen, self.splash_screen)
@@ -77,6 +82,9 @@ class ListifyApp:
         # Configurar acceso rápido para pantalla completa
         self.root.bind("<F11>", lambda event: self._toggle_fullscreen())
         self.root.bind("<Escape>", lambda event: self._exit_fullscreen())
+        
+        # Configurar cierre de la aplicación
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         
         # Iniciar con la pantalla de inicio
         self.mostrar_splash()
@@ -152,6 +160,8 @@ class ListifyApp:
         self.main_screen.frame.pack_forget()
         self.about_screen.frame.pack_forget()
         self.player_screen.frame.pack(fill=tk.BOTH, expand=True)
+        # Actualizar interfaz del reproductor para reflejar el estado actual
+        self.player_screen.refresh_player_view()
     
     def _abrir_redes(self, network="instagram"):
         """Abre enlaces a redes sociales"""
@@ -190,3 +200,9 @@ class ListifyApp:
             # Actualizar botón en la interfaz si existe
             if hasattr(self.main_screen, 'update_fullscreen_button'):
                 self.main_screen.update_fullscreen_button(False)
+    
+    def _on_close(self):
+        """Limpia recursos al cerrar la aplicación"""
+        if hasattr(self, 'music_player'):
+            self.music_player.cleanup()
+        self.root.destroy()

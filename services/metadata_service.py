@@ -32,12 +32,18 @@ def add_metadata_to_file(file_path, metadata):
     try:
         # Verificar que el archivo existe
         if not os.path.exists(file_path):
+            print(f"Error: El archivo {file_path} no existe")
             return False
+        
+        # Imprimir metadatos para depuración
+        print(f"Añadiendo metadatos a {file_path}")
+        print(f"Metadatos: {metadata}")
         
         # Intenta abrir el archivo MP3 existente o crea uno nuevo
         try:
             audio = ID3(file_path)
         except ID3NoHeaderError:
+            print(f"No se encontraron etiquetas ID3 en {file_path}, creando nuevas")
             audio = ID3()
         
         # Añadir título
@@ -67,28 +73,39 @@ def add_metadata_to_file(file_path, metadata):
         # Añadir portada
         if 'cover_url' in metadata and metadata['cover_url']:
             try:
+                print(f"Intentando descargar portada desde: {metadata['cover_url']}")
                 response = requests.get(metadata['cover_url'])
+                if response.status_code != 200:
+                    print(f"Error al descargar portada. Código de estado: {response.status_code}")
+                    return False
+                    
                 cover_data = response.content
+                print(f"Portada descargada, tamaño: {len(cover_data)} bytes")
                 
                 # Procesar la imagen con PIL para asegurar compatibilidad
                 try:
                     img = Image.open(BytesIO(cover_data))
+                    print(f"Imagen abierta: {img.format}, tamaño: {img.size}")
                     
                     # Redimensionar si es demasiado grande (max 500x500)
                     if img.width > 500 or img.height > 500:
                         img.thumbnail((500, 500), Image.LANCZOS)
+                        print(f"Imagen redimensionada a: {img.size}")
                     
                     # Guardar en memoria
                     output = BytesIO()
                     img.convert('RGB').save(output, format='JPEG', quality=90)
                     cover_data = output.getvalue()
                     cover_type = 'image/jpeg'
-                except Exception:
+                    print(f"Imagen convertida a JPEG, nuevo tamaño: {len(cover_data)} bytes")
+                except Exception as e:
+                    print(f"Error al procesar imagen: {e}")
                     cover_type = response.headers.get('Content-Type', 'image/jpeg')
                 
                 # Eliminar portadas existentes
                 for key in list(audio.keys()):
                     if key.startswith('APIC'):
+                        print(f"Eliminando portada existente: {key}")
                         del audio[key]
                 
                 # Añadir nueva portada
@@ -99,14 +116,19 @@ def add_metadata_to_file(file_path, metadata):
                     desc='Cover',          # Descripción
                     data=cover_data        # Los datos binarios de la imagen
                 )
-            except Exception:
-                pass
+                print("Portada añadida exitosamente")
+            except Exception as e:
+                print(f"Error al agregar portada: {e}")
+        else:
+            print("No se proporcionó URL de portada")
         
         # Guardar cambios
         audio.save(file_path, v2_version=3)  # Forzar ID3v2.3 para mayor compatibilidad
+        print(f"Metadatos guardados exitosamente en {file_path}")
         return True
     
-    except Exception:
+    except Exception as e:
+        print(f"Error al añadir metadatos: {e}")
         return False
 
 def fix_mp3_file(file_path):

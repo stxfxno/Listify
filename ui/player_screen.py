@@ -12,18 +12,17 @@ import threading
 import time
 
 from config import SPOTIFY_BLACK, SPOTIFY_GREEN, SPOTIFY_DARK_GRAY, SPOTIFY_LIGHT_GRAY
-from services.music_player_service import MusicPlayerService
 
 class PlayerScreen:
     """Clase para la pantalla del reproductor de música"""
-    def __init__(self, parent, shared_vars, volver_callback):
+    def __init__(self, parent, shared_vars, volver_callback, music_player):
         self.parent = parent
         self.frame = tk.Frame(parent, bg=SPOTIFY_BLACK)
         self.shared_vars = shared_vars
         self.volver_callback = volver_callback
         
-        # Inicializar el servicio de reproductor
-        self.player = MusicPlayerService()
+        # Usar el servicio de reproductor pasado como parámetro
+        self.player = music_player
         
         # Variables de control
         self.music_folder = tk.StringVar(value="No seleccionado")
@@ -424,6 +423,8 @@ class PlayerScreen:
             # Reanudar reproducción
             self.player.resume()
             self.play_btn.config(text="⏸️")
+            # Asegurarse de que la UI se esté actualizando
+            self._start_ui_update()
         elif self.player.is_playing():
             # Pausar reproducción
             self.player.pause()
@@ -469,6 +470,9 @@ class PlayerScreen:
             
             # Cambiar icono de reproducción a pausa
             self.play_btn.config(text="⏸️")
+            
+            # Reiniciar la actualización de UI
+            self._start_ui_update()
     
     def _play_previous(self):
         """Reproduce la canción anterior en la lista"""
@@ -496,7 +500,10 @@ class PlayerScreen:
             
             # Cambiar icono de reproducción a pausa
             self.play_btn.config(text="⏸️")
-    
+            
+            # Reiniciar la actualización de UI
+            self._start_ui_update()
+
     def _on_progress_change(self, value):
         """Maneja cambios en la barra de progreso por interacción del usuario"""
         if self.updating_progress or not hasattr(self.player, 'playlist') or not self.player.playlist:
@@ -606,10 +613,50 @@ class PlayerScreen:
     
     def _on_close(self):
         """Acciones a realizar al cerrar la pantalla"""
-        # Detener la reproducción y liberar recursos
-        self.player.stop()
+        # Ya no detenemos la reproducción, sólo paramos la actualización de UI
         self._stop_ui_update()
-        self.player.cleanup()
         
         # Volver a la pantalla anterior
         self.volver_callback()
+    
+    def refresh_player_view(self):
+        """Actualiza la interfaz del reproductor cuando se regresa a esta pantalla"""
+        # Actualizar lista de canciones si es necesario
+        if self.music_folder.get() != "No seleccionado":
+            self._load_songs_from_folder(self.music_folder.get())
+        
+        # Si hay reproducción activa, actualizar UI
+        if not self.player.stopped:
+            # Obtener metadatos de la canción actual
+            if self.player.current_song:
+                metadata = self.player.get_song_metadata(self.player.current_song)
+                
+                # Actualizar información mostrada
+                self.current_song_title.set(metadata['title'])
+                self.current_song_artist.set(metadata['artist'])
+                self.current_song_album.set(metadata['album'])
+                
+                # Actualizar portada
+                self._update_cover(metadata['cover'])
+                
+                # Actualizar tiempo total
+                total_length = self.player.get_length()
+                mins, secs = divmod(int(total_length), 60)
+                self.total_time_text.set(f"{mins:02d}:{secs:02d}")
+                
+                # Actualizar icono del botón según estado
+                if self.player.is_paused():
+                    self.play_btn.config(text="▶️")
+                else:
+                    self.play_btn.config(text="⏸️")
+                    # Reiniciar la actualización de UI si está reproduciendo
+                    self._start_ui_update()
+            
+            # Actualizar selección en la lista
+            if hasattr(self.player, 'current_index') and self.player.current_index >= 0:
+                try:
+                    self.song_list.selection_clear(0, tk.END)
+                    self.song_list.selection_set(self.player.current_index)
+                    self.song_list.see(self.player.current_index)
+                except:
+                    pass  # Por si el índice está fuera de rango
