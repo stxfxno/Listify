@@ -14,6 +14,7 @@ from config import SPOTIFY_BLACK, SPOTIFY_GREEN, SPOTIFY_DARK_GRAY
 from ui.splash_screen import SplashScreen
 from ui.main_screen import MainScreen
 from ui.about_screen import AboutScreen  # Nueva pantalla para Acerca de
+from ui.player_screen import PlayerScreen  # Nueva pantalla para el reproductor
 from ui.styles import setup_styles
 
 class ListifyApp:
@@ -64,9 +65,11 @@ class ListifyApp:
             self._abrir_redes, 
             self._seleccionar_destino,
             self._abrir_acerca_de,
-            self._toggle_fullscreen
+            self._toggle_fullscreen,
+            self._abrir_reproductor  # Añadir callback del reproductor
         )
         self.about_screen = AboutScreen(self.root, self._volver_main)
+        self.player_screen = PlayerScreen(self.root, self.shared_vars, self._volver_main)
         
         # Configurar estilos
         setup_styles(self.main_screen, self.splash_screen)
@@ -113,30 +116,42 @@ class ListifyApp:
         self.splash_screen.frame.pack(fill=tk.BOTH, expand=True)
         self.main_screen.frame.pack_forget()
         self.about_screen.frame.pack_forget()
+        self.player_screen.frame.pack_forget()
     
     def _abrir_inicio(self):
         """Abre la pantalla principal"""
         self.splash_screen.frame.pack_forget()
         self.about_screen.frame.pack_forget()
+        self.player_screen.frame.pack_forget()
         self.main_screen.frame.pack(fill=tk.BOTH, expand=True)
     
     def _volver_inicio(self):
         """Vuelve a la pantalla de inicio"""
         self.main_screen.frame.pack_forget()
         self.about_screen.frame.pack_forget()
+        self.player_screen.frame.pack_forget()
         self.splash_screen.frame.pack(fill=tk.BOTH, expand=True)
     
     def _volver_main(self):
         """Vuelve a la pantalla principal desde otras pantallas"""
         self.splash_screen.frame.pack_forget()
         self.about_screen.frame.pack_forget()
+        self.player_screen.frame.pack_forget()
         self.main_screen.frame.pack(fill=tk.BOTH, expand=True)
     
     def _abrir_acerca_de(self):
         """Abre la pantalla de Acerca de"""
         self.splash_screen.frame.pack_forget()
         self.main_screen.frame.pack_forget()
+        self.player_screen.frame.pack_forget()
         self.about_screen.frame.pack(fill=tk.BOTH, expand=True)
+    
+    def _abrir_reproductor(self):
+        """Abre la pantalla del reproductor de música"""
+        self.splash_screen.frame.pack_forget()
+        self.main_screen.frame.pack_forget()
+        self.about_screen.frame.pack_forget()
+        self.player_screen.frame.pack(fill=tk.BOTH, expand=True)
     
     def _abrir_redes(self, network="instagram"):
         """Abre enlaces a redes sociales"""

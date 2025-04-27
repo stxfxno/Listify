@@ -16,7 +16,7 @@ from services.metadata_service import get_basic_metadata
 class MainScreen:
     """Clase para la pantalla principal de la aplicación con nuevo layout"""
     def __init__(self, parent, shared_vars, volver_callback, redes_callback, 
-                 destino_callback, acerca_callback, fullscreen_callback):
+                 destino_callback, acerca_callback, fullscreen_callback, reproductor_callback=None):
         self.parent = parent
         self.frame = tk.Frame(parent, bg=SPOTIFY_BLACK)
         
@@ -33,6 +33,7 @@ class MainScreen:
         self.destino_callback = destino_callback
         self.acerca_callback = acerca_callback
         self.fullscreen_callback = fullscreen_callback
+        self.reproductor_callback = reproductor_callback
         
         self._create_widgets()
     
@@ -106,12 +107,17 @@ class MainScreen:
         
         # Botones de navegación
         buttons_config = [
+            {"text": "Reproductor", "command": self.reproductor_callback},
             {"text": "Acerca de", "command": self.acerca_callback},
             {"text": "Contacto", "command": self.redes_callback},
             {"text": "Pantalla Completa", "command": self.fullscreen_callback}
         ]
         
         for config in buttons_config:
+            # Solo añadir el botón de reproductor si el callback está definido
+            if config["text"] == "Reproductor" and not self.reproductor_callback:
+                continue
+                
             btn = tk.Button(
                 self.nav_buttons, 
                 text=config["text"], 
@@ -124,7 +130,27 @@ class MainScreen:
                 command=config["command"]
             )
             btn.pack(side=tk.LEFT, padx=5)
-
+            
+            # Agregar efectos hover
+            btn.bind("<Enter>", self._on_enter)
+            btn.bind("<Leave>", self._on_leave)
+    
+    def _on_enter(self, e):
+        """Efecto al pasar el mouse sobre un botón"""
+        e.widget.config(bg="#444444", cursor="hand2")
+    
+    def _on_leave(self, e):
+        """Efecto al quitar el mouse de un botón"""
+        e.widget.config(bg=SPOTIFY_DARK_GRAY)
+    
+    def update_fullscreen_button(self, is_full):
+        """Actualiza el texto del botón de pantalla completa"""
+        # Actualizar el texto según el estado
+        for btn in self.nav_buttons.winfo_children():
+            if btn.cget("command") == self.fullscreen_callback:
+                btn.config(text="Salir Pantalla Completa" if is_full else "Pantalla Completa")
+                break
+    
     def _create_search_controls(self):
         """Crear los controles de búsqueda según el nuevo layout"""
         # Frame para URL
@@ -222,7 +248,7 @@ class MainScreen:
         )
         self.search_type.current(0)
         self.search_type.pack(side=tk.LEFT)
-
+    
     def _create_info_section(self):
         """Crear la sección de información según el nuevo layout"""
         # Frame para resultados
@@ -371,7 +397,7 @@ class MainScreen:
             anchor='w'
         )
         self.popularity_label.pack(side=tk.LEFT)
-
+    
     def _create_results_section(self):
         """Crear la sección de resultados (lista de canciones)"""
         # Título para la lista de canciones
@@ -419,7 +445,7 @@ class MainScreen:
         
         # Añadir evento de selección
         self.track_list.bind('<<ListboxSelect>>', self._on_track_select)
-
+    
     def _create_download_section(self):
         """Crear la sección de descarga según el nuevo layout"""
         # Frame contenedor para selección de carpeta
@@ -513,7 +539,7 @@ class MainScreen:
             anchor='w'
         )
         self.status_label.pack(fill=tk.X)
-
+    
     def _create_footer(self):
         """Crear el pie de página según el nuevo layout"""
         self.footer = tk.Frame(self.content_frame, bg=SPOTIFY_BLACK)
@@ -556,15 +582,6 @@ class MainScreen:
         self.linkedin_btn = create_social_button("LinkedIn", "linkedin")
     
     # ===== MÉTODOS FUNCIONALES =====
-    # Estos métodos se mantienen igual que en el original, ya que la funcionalidad no cambia
-    
-    def update_fullscreen_button(self, is_full):
-        """Actualiza el texto del botón de pantalla completa"""
-        # Actualizar el texto según el estado
-        for btn in self.nav_buttons.winfo_children():
-            if btn.cget("command") == self.fullscreen_callback:
-                btn.config(text="Salir Pantalla Completa" if is_full else "Pantalla Completa")
-                break
     
     def fetch_tracks(self):
         """Obtener pistas desde una URL de Spotify"""
